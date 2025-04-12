@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Album nyilvántartás</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    table, th, td { border: 1px solid #000; border-collapse: collapse; padding: 6px; }
+    table { width: 100%; margin-top: 20px; }
+    input { margin: 5px 0; padding: 5px; }
+  </style>
+</head>
+<body>
+
+  <h1>Zenekarok albumai</h1>
+
+  <h2>Új album hozzáadása</h2>
+  <form id="addForm">
+    <input type="text" id="author" placeholder="Előadó neve" required><br>
+    <input type="text" id="name" placeholder="Album címe" required><br>
+    <input type="number" id="realeseYear" placeholder="Megjelenési év" required><br>
+    <input type="text" id="style" placeholder="Stílus / műfaj" required><br>
+    <button type="submit">Hozzáadás</button>
+  </form>
+
+  <h2>Album lista</h2>
+  <table id="albumTable">
+    <thead>
+      <tr>
+        <th>Előadó</th>
+        <th>Album címe</th>
+        <th>Megjelenési év</th>
+        <th>Stílus</th>
+        <th>Művelet</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Album szerkesztése</h2>
+  <form id="editForm" style="display: none;">
+    <input type="hidden" id="editId">
+    <input type="text" id="editAuthor" placeholder="Előadó" required><br>
+    <input type="text" id="editName" placeholder="Album címe" required><br>
+    <input type="number" id="editYear" placeholder="Megjelenési év" required><br>
+    <input type="text" id="editStyle" placeholder="Stílus" required><br>
+    <button type="submit">Mentés</button>
+  </form>
+
+  <script>
+    const API_URL = "http://localhost:3000/albums"; 
+
+    async function fetchAlbums() {
+      const res = await fetch(API_URL);
+      const albums = await res.json();
+      renderTable(albums);
+    }
+
+    function renderTable(albums) {
+      const tbody = document.querySelector("#albumTable tbody");
+      tbody.innerHTML = "";
+      albums.forEach(album => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${album.author}</td>
+          <td>${album.name}</td>
+          <td>${album.realeseYear}</td>
+          <td>${album.style}</td>
+          <td>
+            <button onclick="viewAlbum(${album.id})">Szerkesztés</button>
+            <button onclick="deleteAlbum(${album.id})">Törlés</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("addForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const album = {
+        author: document.getElementById("author").value,
+        name: document.getElementById("name").value,
+        realeseYear: parseInt(document.getElementById("realeseYear").value),
+        style: document.getElementById("style").value
+      };
+
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(album)
+      });
+
+      e.target.reset();
+      fetchAlbums();
+    });
+
+    async function viewAlbum(id) {
+      const res = await fetch(`${API_URL}/${id}`);
+      const album = await res.json();
+
+      document.getElementById("editForm").style.display = "block";
+      document.getElementById("editId").value = album.id;
+      document.getElementById("editAuthor").value = album.author;
+      document.getElementById("editName").value = album.name;
+      document.getElementById("editYear").value = album.realeseYear;
+      document.getElementById("editStyle").value = album.style;
+    }
+
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("editId").value;
+      const updatedAlbum = {
+        author: document.getElementById("editAuthor").value,
+        name: document.getElementById("editName").value,
+        realeseYear: parseInt(document.getElementById("editYear").value),
+        style: document.getElementById("editStyle").value
+      };
+
+      await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedAlbum)
+      });
+
+      document.getElementById("editForm").reset();
+      document.getElementById("editForm").style.display = "none";
+      fetchAlbums();
+    });
+
+    async function deleteAlbum(id) {
+      await fetch(`${API_URL}/${id}`, {
+        method: "DELETE"
+      });
+      fetchAlbums();
+    }
+
+    fetchAlbums();
+  </script>
+</body>
+</html>
