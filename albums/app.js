@@ -1,8 +1,10 @@
 import express from 'express'
 import { dbAll, initializeDatabase, dbGet,dbRun } from './Util/database.js'
+import cors from 'cors'
 
 const app = express()
 app.use(express.json())
+app.use(cors())
 
 app.get('/albums', async (req, res)=> {
     const albums = await dbAll("SELECT * FROM albums");
@@ -52,7 +54,7 @@ app.delete("/albums/:id", async (req, res) => {
         return res.status(404).json({message:"Album not found"});
     }
     await dbRun("DELETE FROM albums WHERE id = ?;",[id]);
-    es.status(200).json({message:"delete sucsessful"});
+    res.status(200).json({message:"delete sucsessful"});
 })
 
 app.use((req, res, next, err) =>{
